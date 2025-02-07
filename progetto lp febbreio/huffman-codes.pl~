@@ -11,45 +11,48 @@ one_element_list([_]):-!.
 
 
 
+%hucodec_encode
+
+hucodec_encode():-
+    !.
+
+
+
 %hucodec_generate_huffman_tree
 
 hucodec_generate_huffman_tree(List, Tree):-
     is_list(List),
     not(void_list(List)),
     not(one_element_list(List)),
-    head_node(List,C):
+    head_node(List):
     Tree=C,
     writeln(C),
     !.
 
 
-create_new_node(A):-
-    A=(_|N),
+
+create_new_node([[L, N|_], [L1, N1]]):-
     number(N),
-    %not(number(L)),
+    not(number(L)),
+    number(N1),
+    not(number(L1)),
+    N2 is N + N1,
+    assert(node([L, L1],N2)),
+    listing(node([L, L1],_)),
+
     !.
 
-
- %   prova(B, N, L):-
- %   B=[L1|N1];
- %   number(N1),
- %   not(number(L1)),
- %   C=[[L,L1],N+N1],
- %   writeln(C),
-
- %   !.
-
-head_node(List,C):-
-    List1=(_|List),
-    not(one_element_list(List1)),
-    head_node(List1,C),
+head_node([N|List]):-
+    not(one_element_list(List)),
+    head_node(List),
    % List1=(B|_),
    % create_new_node(A,B,C),
     !.
 
-head_node(List):-
-    List=(_|List1),
-    one_element_list(List1),
+head_node([N|List]):-
+    one_element_list(List),
+    create_new_node(N, List),
+
  %   create_new_node(A,List1,C),
  %   List=(A|C|List1),
     !.
