@@ -35,7 +35,7 @@ create_new_node([[L, N], [L1, N1]]):-
     N2 is N + N1,
     assert(node([L, L1],N2)),
     create_vector([[L, N], [L1, N1]]),
-    listing(node([L, L1],_)),
+   % listing(node([L, L1],_)),
 
     !.
 
@@ -47,12 +47,23 @@ create_new_node([[L, N], [L1, N1]]):-
     assert(node(Result,N2)),
     create_vector([[L, N], [L1, N1]]),
     listing(node(Result,_)),
+    !.
 
+create_new_node([[L, N], [L1, N1]]):-
+    is_list(L),
+   not(is_list(L1)),
+    append(L, [L1], Result),
+    write(Result),
+    N2 is N + N1,
+    assert(node(Result,N2)),
+    create_vector([[L, N], [L1, N1]]),
+    listing(node(Result,_)),
     !.
 
 
 create_node([[S1,N1],[S2, N2]|List],Node):-
     not(void_list(List)),
+    not(one_element_list(List)),
     N1 == N2,
     create_new_node([[S1,N1],[S2, N2]]),
     create_node(List, SNode),
@@ -63,11 +74,25 @@ create_node([[S1,N1],[S2, N2]|List],Node):-
     DNode = [L1|_],
     SNode = [L2|_],
      append(L1, L2, Result),
-      write('b'),
     findall(N_1, node(Result, N_1), [N_2|_]),
-     write('b'),
     Node =[Result, N_2],
-    write('b'),
+    !.
+
+create_node([[S1,N1],[S2, N2]|List],Node):-
+    not(void_list(List)),
+    one_element_list(List),
+    N1 == N2,
+    create_new_node([[S1,N1],[S2, N2]]),
+    findall(N, node([S1,S2], N), [N3|_]),
+    S = [S1, S2],
+    DNode =[S, N3],
+    List = [List1|_],
+    create_new_node([DNode,List1]),
+    DNode = [L1|_],
+    append(L1, [List1], Result),
+   write( findall(N_1, node(Result, N_1), [N_2|_])),
+    Node =[Result, N_2],
+
     !.
 
 create_node([[S1,N1],[S2, N2]|List], Node):-
@@ -90,6 +115,14 @@ create_vector([[L, _], [L1, _]]):-
     is_list(L),
     is_list(L1),
      append(L, L1, Result),
+     assert(vector(Result,L,0)),
+     assert(vector(Result,L1,1)),
+    !.
+
+create_vector([[L, _], [L1, _]]):-
+    is_list(L),
+    not(is_list(L1)),
+     append(L, [L1], Result),
      assert(vector(Result,L,0)),
      assert(vector(Result,L1,1)),
     !.
