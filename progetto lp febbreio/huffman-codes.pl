@@ -1,6 +1,6 @@
 :- dynamic node/2.
 :- dynamic vector/3.
-:- dynamic hucodec_encode_file/3.
+:- dynamic snW/1.
 :- dynamic hucodec_generate_huffman_tree/2.
 :- dynamic hucodec_generate_symbol_bits_table/2.
 :- dynamic hucode_print_huffman_tree/1.
@@ -16,14 +16,18 @@ cancella_tutti_nodi :-
 
 %hucodec_encode
 
-hucodec_encode():-
+hucodec_encode(Message, Tree, Bit):-
+    Message =0,
+    Tree =0,
+    Bit=0,
     !.
 
 
 
 %hucodec_generate_huffman_tree
 
-hucodec_generate_huffman_tree(List, Tree):-
+hucodec_generate_huffman_tree(snW(List), Tree):-
+    write(List),
     is_list(List),
     not(void_list(List)),
     not(one_element_list(List)),

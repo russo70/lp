@@ -1,6 +1,6 @@
 :- dynamic node/2.
 :- dynamic vector/3.
-:- dynamic hucodec_encode_file/3.
+:- dynamic snW/1.
 :- dynamic hucodec_generate_huffman_tree/2.
 :- dynamic hucodec_generate_symbol_bits_table/2.
 :- dynamic hucode_print_huffman_tree/1.
@@ -16,7 +16,10 @@ cancella_tutti_nodi :-
 
 %hucodec_encode
 
-hucodec_encode():-
+hucodec_encode(Message, Tree, Bit):-
+    Message =0,
+    Tree =0,
+    Bit=0,
     !.
 
 
@@ -24,6 +27,7 @@ hucodec_encode():-
 %hucodec_generate_huffman_tree
 
 hucodec_generate_huffman_tree(List, Tree):-
+    write(List),
     is_list(List),
     not(void_list(List)),
     not(one_element_list(List)),
@@ -38,7 +42,6 @@ create_new_node([[L, N], [L1, N1]]):-
     N2 is N + N1,
     assert(node([L, L1],N2)),
     create_vector([[L, N], [L1, N1]]),
-    listing(node([L, L1],_)),
 
     !.
 
@@ -49,7 +52,6 @@ create_new_node([[L, N], [L1, N1]]):-
     N2 is N + N1,
     assert(node(Result,N2)),
     create_vector([[L, N], [L1, N1]]),
-    listing(node(Result,_)),
     !.
 
 create_new_node([[L, N], [L1, N1]]):-
@@ -59,7 +61,6 @@ create_new_node([[L, N], [L1, N1]]):-
     N2 is N + N1,
     assert(node(Result,N2)),
     create_vector([[L, N], [L1, N1]]),
-    listing(node(Result,_)),
     !.
 
 create_new_node([[L, N], [L1, N1]]):-
@@ -69,7 +70,6 @@ create_new_node([[L, N], [L1, N1]]):-
     N2 is N + N1,
     assert(node(Result,N2)),
     create_vector([[L, N], [L1, N1]]),
-    listing(node(Result,_)),
     !.
 
 
