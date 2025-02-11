@@ -1,7 +1,7 @@
 :- dynamic node/2.
 :- dynamic vector/3.
-:- dynamic snW/1.
-:- dynamic hucodec_generate_huffman_tree/2.
+:- dynamic symbols_n_weights/1.
+:- dynamic message/1.
 :- dynamic hucodec_generate_symbol_bits_table/2.
 :- dynamic hucode_print_huffman_tree/1.
 
@@ -12,22 +12,119 @@ one_element_list([_]):-!.
 cancella_tutti_nodi :-
     retractall(node(_, _)).
 
+cancella_tutti_vettori :-
+    retractall(vector(_, _,_)).
 
+cancella_symbols_n_weights:- retractall(symbols_n_weights(_)).
+
+cancella_messaggio:- retractall(message(_)).
+
+
+delete_all:-
+    cancella_tutti_nodi,
+    cancella_tutti_vettori,
+    cancella_symbols_n_weights,
+    cancella_messaggio,
+    !.
 
 %hucodec_encode
 
 hucodec_encode(Message, Tree, Bit):-
-    Message =0,
-    Tree =0,
-    Bit=0,
+    string(Message),
+    convert_to_list(Message, List),
+    encode(List, Tree, Bit),
     !.
 
+encode([M|List], Tree, Bit):-
+     not(void_list(List)),
+     get_bit(M,Tree, Bitx),
+     writeln("bit sono"),
+     writeln(Bitx),
+      writeln(""),
+     encode(List, Tree, Bits),
+      string_concat(Bitx, Bits, Bit),
+
+    !.
+
+encode([M|List], Tree, Bit):-
+    void_list(List),
+    get_bit(M,Tree, Bit),
+    !.
+
+
+get_bit(M, [Tree|_], Bit):-
+    not(one_element_list(Tree)),
+    member(M, Tree),
+    findall(N, vector(Tree, N, 1), [List|_]),
+    is_list(List),
+     write(d),
+     writeln(List),
+    member(M,List),
+     write(List),
+    writeln(d),
+    Bitx = "1",
+    get_bit(M, [List,_],Bits),
+    string_concat(Bitx, Bits, Bit),
+    !.
+
+get_bit(M, [Tree|_], Bit):-
+    not(one_element_list(Tree)),
+    member(M, Tree),
+    findall(N, vector(Tree, N, 1), [List|_]),
+     write(dl),
+     writeln(List),
+    not(is_list(List)),
+    List1 = [List],
+    member(M,List1),
+     write(List1),
+    writeln(dl),
+    Bit = "1",
+    !.
+
+get_bit(M, [Tree|_], Bit):-
+    not(one_element_list(Tree)),
+    member(M, Tree),
+    findall(N, vector(Tree, N, 0), [List|_]),
+     write(s),
+     writeln(List),
+    is_list(List),
+    member(M,List),
+     write(List),
+     writeln(s),
+    Bit = "0",
+    get_bit(M, [List,_],Bits),
+     string_concat(Bit, Bits, Bit),
+    !.
+
+get_bit(M, [Tree|_], Bit):-
+    not(one_element_list(Tree)),
+    member(M, Tree),
+    findall(N, vector(Tree, N, 0), [List|_]),
+     write(sl),
+     writeln(List),
+    not(is_list(List)),
+    List1 = [List],
+    member(M,List1),
+     write(List1),
+    writeln(sl),
+    Bit = "0",
+    !.
+
+
+get_bit(_, [Tree|_], _):-
+    one_element_list(Tree),
+    writeln(g),
+    !.
+
+
+convert_to_list(M, List):-
+    atom_chars(M, List),
+    !.
 
 
 %hucodec_generate_huffman_tree
 
 hucodec_generate_huffman_tree(List, Tree):-
-    write(List),
     is_list(List),
     not(void_list(List)),
     not(one_element_list(List)),
@@ -40,6 +137,8 @@ create_new_node([[L, N], [L1, N1]]):-
     not(is_list(L)),
    not( is_list(L1)),
     N2 is N + N1,
+    assert(node(L,N)),
+    assert(node(L1,N1)),
     assert(node([L, L1],N2)),
     create_vector([[L, N], [L1, N1]]),
 
@@ -59,6 +158,7 @@ create_new_node([[L, N], [L1, N1]]):-
    not(is_list(L1)),
     append(L, [L1], Result),
     N2 is N + N1,
+     assert(node(L1,N1)),
     assert(node(Result,N2)),
     create_vector([[L, N], [L1, N1]]),
     !.
@@ -68,6 +168,7 @@ create_new_node([[L, N], [L1, N1]]):-
    is_list(L1),
     append([L], L1, Result),
     N2 is N + N1,
+     assert(node(L,N)),
     assert(node(Result,N2)),
     create_vector([[L, N], [L1, N1]]),
     !.
@@ -145,8 +246,8 @@ create_node([[S1,N1],[S2, N2]|List], Node):-
 create_vector([[L, _], [L1, _]]):-
     not( is_list(L)),
    not( is_list(L1)),
-     assert(vector([L, L1],l,0)),
-     assert(vector([L, L1],l1,1)),
+     assert(vector([L, L1],L,0)),
+     assert(vector([L, L1],L1,1)),
     !.
 
 create_vector([[L, _], [L1, _]]):-
@@ -171,4 +272,22 @@ create_vector([[L, _], [L1, _]]):-
      append([L], L1, Result),
      assert(vector(Result,L,0)),
      assert(vector(Result,L1,1)),
+    !.
+
+hucodec_print_huffman_tree([Tree|_]):-
+    not(one_element_list(Tree)),
+    % writeln(Tree),
+    findall(N, vector(Tree, N, 0), [List|_]),
+    writeln( vector(Tree, List, 0)),
+    hucodec_print_huffman_tree([List]),
+    findall(N2, vector(Tree, N2, 1), [List1|_]),
+     writeln( vector(Tree, List1, 1)),
+    hucodec_print_huffman_tree([List1]),
+    !.
+
+hucodec_print_huffman_tree(Tree):-
+        one_element_list(Tree),
+        Tree =[Node],
+         findall(N, node(Node, N), [List|_]),
+          writeln( node(Node, List)),
     !.
