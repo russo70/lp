@@ -9,6 +9,15 @@ void_list([]):-!.
 
 one_element_list([_]):-!.
 
+is_only_numbers(String) :-
+  string_codes(String, Codes),
+    forall(member(Code, Codes),
+         between(48, 57, Code)).
+
+char_to_number(Char, Number) :-
+    char_code(Char, Code),
+    Number is Code - 48.
+
 cancella_tutti_nodi :-
     retractall(node(_, _)).
 
@@ -38,9 +47,6 @@ hucodec_encode(Message, Tree, Bit):-
 encode([M|List], Tree, Bit):-
      not(void_list(List)),
      get_bit(M,Tree, Bitx),
-     writeln("bit sono"),
-     writeln(Bitx),
-      writeln(""),
      encode(List, Tree, Bits),
       string_concat(Bitx, Bits, Bit),
 
@@ -57,11 +63,7 @@ get_bit(M, [Tree|_], Bit):-
     member(M, Tree),
     findall(N, vector(Tree, N, 1), [List|_]),
     is_list(List),
-     write(d),
-     writeln(List),
     member(M,List),
-     write(List),
-    writeln(d),
     Bitx = "1",
     get_bit(M, [List,_],Bits),
     string_concat(Bitx, Bits, Bit),
@@ -71,13 +73,9 @@ get_bit(M, [Tree|_], Bit):-
     not(one_element_list(Tree)),
     member(M, Tree),
     findall(N, vector(Tree, N, 1), [List|_]),
-     write(dl),
-     writeln(List),
     not(is_list(List)),
     List1 = [List],
     member(M,List1),
-     write(List1),
-    writeln(dl),
     Bit = "1",
     !.
 
@@ -85,12 +83,8 @@ get_bit(M, [Tree|_], Bit):-
     not(one_element_list(Tree)),
     member(M, Tree),
     findall(N, vector(Tree, N, 0), [List|_]),
-     write(s),
-     writeln(List),
     is_list(List),
     member(M,List),
-     write(List),
-     writeln(s),
     Bit = "0",
     get_bit(M, [List,_],Bits),
      string_concat(Bit, Bits, Bit),
@@ -100,26 +94,61 @@ get_bit(M, [Tree|_], Bit):-
     not(one_element_list(Tree)),
     member(M, Tree),
     findall(N, vector(Tree, N, 0), [List|_]),
-     write(sl),
-     writeln(List),
     not(is_list(List)),
     List1 = [List],
     member(M,List1),
-     write(List1),
-    writeln(sl),
     Bit = "0",
-    !.
-
-
-get_bit(_, [Tree|_], _):-
-    one_element_list(Tree),
-    writeln(g),
     !.
 
 
 convert_to_list(M, List):-
     atom_chars(M, List),
     !.
+
+
+%hucodec_decode
+
+hucodec_decode(Bits, [Tree|_], Message):-
+    is_only_numbers(Bits),
+    convert_to_list(Bits, List),
+    get_string(List,Tree,Message),
+
+    !.
+
+get_string(Bits,Tree,Message):-
+    not(void_list(Bits)),
+    get_letter(Bits,Tree,Bit,M),
+    writeln(M),
+    get_string(Bit,Tree,M1),
+    writeln(M1),
+    atom_concat(M, M1, Message),
+    writeln(Message),
+  !.
+
+get_string(Bits,_,M):-
+  void_list(Bits),
+  M = "",
+  !.
+
+get_letter([N|Bits],Tree,Bit,M):-
+  atom_number(N,N1),
+  findall(L, vector(Tree, L, N1), [List2|_]),
+  write("nuovo albero "),
+  writeln(List2),
+  writeln(Bits),
+  write(g),
+  not(one_element_list(List2)),
+  write(f),
+  get_letter(Bits,List2,Bit,M),
+  !.
+
+get_letter([N|Bits],Tree,Bits,M):-
+   atom_number(N,N1),
+   findall(List, vector(Tree, List, N1), Ntree),
+   one_element_list(Ntree),
+   Ntree =[M|_],
+
+  !.
 
 
 %hucodec_generate_huffman_tree

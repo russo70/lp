@@ -9,6 +9,15 @@ void_list([]):-!.
 
 one_element_list([_]):-!.
 
+is_only_numbers(String) :-
+  string_codes(String, Codes),
+    forall(member(Code, Codes),
+         between(48, 57, Code)).
+
+char_to_number(Char, Number) :-
+    char_code(Char, Code),
+    Number is Code - 48.
+
 cancella_tutti_nodi :-
     retractall(node(_, _)).
 
@@ -95,6 +104,43 @@ get_bit(M, [Tree|_], Bit):-
 convert_to_list(M, List):-
     atom_chars(M, List),
     !.
+
+
+%hucodec_decode
+
+hucodec_decode(Bits, [Tree|_], Message):-
+    is_only_numbers(Bits),
+    convert_to_list(Bits, List),
+    get_string(List,Tree,Message),
+
+    !.
+
+get_string(Bits,Tree,Message):-
+    not(void_list(Bits)),
+    get_letter(Bits,Tree,Bit,M),
+    get_string(Bit,Tree,M1),
+    atom_concat(M, M1, Message),
+  !.
+
+get_string(Bits,_,M):-
+  void_list(Bits),
+  M = "",
+  !.
+
+get_letter([N|Bits],Tree,Bit,M):-
+  atom_number(N,N1),
+  findall(L, vector(Tree, L, N1), [List2|_]),
+  not(one_element_list(List2)),
+  get_letter(Bits,List2,Bit,M),
+  !.
+
+get_letter([N|Bits],Tree,Bits,M):-
+   atom_number(N,N1),
+   findall(List, vector(Tree, List, N1), Ntree),
+   one_element_list(Ntree),
+   Ntree =[M|_],
+
+  !.
 
 
 %hucodec_generate_huffman_tree
