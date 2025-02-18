@@ -14,10 +14,6 @@ is_only_numbers(String) :-
     forall(member(Code, Codes),
          between(48, 57, Code)).
 
-char_to_number(Char, Number) :-
-    char_code(Char, Code),
-    Number is Code - 48.
-
 cancella_tutti_nodi :-
     retractall(node(_, _)).
 
@@ -36,10 +32,9 @@ delete_all:-
     cancella_messaggio,
     !.
 
-%hucodec_encode
+%hucodec_encode/3
 
 hucodec_encode(Message, Tree, Bit):-
-    string(Message),
     convert_to_list(Message, List),
     encode(List, Tree, Bit),
     !.
@@ -106,7 +101,21 @@ convert_to_list(M, List):-
     !.
 
 
-%hucodec_decode
+
+%hucodec_encode_file/3
+
+hucodec_encode_file(Filename,Tree,Bits):-
+  leggi_file(Filename,String),
+  hucodec_encode(String,Tree,Bits),
+  !.
+
+leggi_file(NomeFile, Contenuto) :-
+    open(NomeFile, read, Stream),
+    read_string(Stream, _, Contenuto),
+    close(Stream),
+    !.
+
+%hucodec_decode/3
 
 hucodec_decode(Bits, [Tree|_], Message):-
     is_only_numbers(Bits),
@@ -141,6 +150,10 @@ get_letter([N|Bits],Tree,Bits,M):-
    Ntree =[M|_],
 
   !.
+
+
+
+
 
 
 %hucodec_generate_huffman_tree
