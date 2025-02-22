@@ -2,8 +2,7 @@
 :- dynamic vector/3.
 :- dynamic symbols_n_weights/1.
 :- dynamic message/1.
-:- dynamic hucodec_generate_symbol_bits_table/2.
-:- dynamic hucode_print_huffman_tree/1.
+:- dynamic symbol_bits_table/2.
 
 void_list([]):-!.
 
@@ -105,16 +104,13 @@ convert_to_list(M, List):-
 %hucodec_encode_file/3
 
 hucodec_encode_file(Filename,Tree,Bits):-
-  writeln(a),
   leggi_file(Filename,String),
   hucodec_encode(String,Tree,Bits),
   !.
 
 leggi_file(NomeFile, Contenuto) :-
-  writeln(l),
     open(NomeFile, read, Stream),
     read_string(Stream, _, Contenuto),
-    writeln(m),
     close(Stream),
     !.
 
@@ -164,7 +160,6 @@ get_letter([N|Bits],Tree,Bits,M):-
 hucodec_generate_huffman_tree(List, Tree):-
     is_list(List),
     not(void_list(List)),
-    not(one_element_list(List)),
     create_node(List, Tree),
     !.
 
@@ -310,6 +305,53 @@ create_vector([[L, _], [L1, _]]):-
      assert(vector(Result,L,0)),
      assert(vector(Result,L1,1)),
     !.
+
+
+%hucodec_generate_symbol_bits_table
+
+
+
+hucodec_generate_symbol_bits_table([Tree|_], SymbolBitsTable) :-
+    findall([Symbol, Bits], get_code(Tree, Symbol, "", Bits), SymbolBitsTable),
+    !.
+
+
+% Se il simbolo è nel ramo sinistro, aggiunge '0' e continua
+get_code(Tree, Symbol, Bits, Code) :-
+  writeln(Tree),
+    vector(Tree, Left, 0), % Trova il ramo sinistro
+    write(sinistra ),
+    write(" "),
+    writeln(Left),
+    string_concat(Bits, "0", NewBits), % Aggiunge "0"
+    get_code(Left, Symbol, NewBits, Code).
+
+% Se il simbolo è nel ramo destro, aggiunge '1' e continua
+get_code(Tree, Symbol, Bits, Code) :-
+   writeln(Tree),
+    vector(Tree, Right, 1), % Trova il ramo destro
+    write(destra ),
+     write(" "),
+    writeln(Right),
+    string_concat(Bits, "1", NewBits), % Aggiunge "1"
+    get_code(Right, Symbol, NewBits, Code).
+
+get_code(Tree, Tree, Bits, Bits) :-
+   writeln(Tree),
+   % node(Symbol, _), % Controlla se è un nodo foglia
+    not(is_list(Tree)),
+   % one_element_list(Tree),
+    write(node + "" ),
+    writeln(Tree),
+   % one_element_list(Symbol),
+   % Tree == [Symbol],
+     writeln(Bits).
+
+
+
+
+
+%hucodec_print_huffman_tree
 
 hucodec_print_huffman_tree([Tree|_]):-
     not(one_element_list(Tree)),

@@ -2,8 +2,7 @@
 :- dynamic vector/3.
 :- dynamic symbols_n_weights/1.
 :- dynamic message/1.
-:- dynamic hucodec_generate_symbol_bits_table/2.
-:- dynamic hucode_print_huffman_tree/1.
+:- dynamic symbol_bits_table/2.
 
 void_list([]):-!.
 
@@ -161,9 +160,19 @@ get_letter([N|Bits],Tree,Bits,M):-
 hucodec_generate_huffman_tree(List, Tree):-
     is_list(List),
     not(void_list(List)),
-    not(one_element_list(List)),
-    create_node(List, Tree),
+    ordina_decrescente(List,NewList),
+    create_node(NewList, Tree),
     !.
+
+
+ordina_decrescente(Lista, ListaOrdinata) :-
+    predsort(compare_desc, Lista, ListaOrdinata).
+
+compare_desc(Order, [_, N1], [_, N2]) :-
+    ( N1 < N2 -> Order = '>'  % Se N1 è minore di N2, allora
+    ; N1 > N2 -> Order = '<'  % Se N1 è maggiore di N2
+    ; Order = '='     % Se sono uguali, si considerano equivalenti)
+    ).
 
 
 
@@ -307,6 +316,36 @@ create_vector([[L, _], [L1, _]]):-
      assert(vector(Result,L,0)),
      assert(vector(Result,L1,1)),
     !.
+
+
+%hucodec_generate_symbol_bits_table
+
+
+
+hucodec_generate_symbol_bits_table([Tree|_], SymbolBitsTable) :-
+    findall([Symbol, Bits], get_code(Tree, Symbol, "", Bits), SymbolBitsTable),
+    !.
+
+
+% Se il simbolo è nel ramo sinistro, aggiunge '0' e continua
+get_code(Tree, Symbol, Bits, Code) :-
+    vector(Tree, Left, 0),
+    string_concat(Bits, "0", NewBits),
+    get_code(Left, Symbol, NewBits, Code).
+
+get_code(Tree, Symbol, Bits, Code) :-
+    vector(Tree, Right, 1),
+    string_concat(Bits, "1", NewBits),
+    get_code(Right, Symbol, NewBits, Code).
+
+get_code(Tree, Tree, Bits, Bits) :-
+    not(is_list(Tree)).
+
+
+
+
+
+%hucodec_print_huffman_tree
 
 hucodec_print_huffman_tree([Tree|_]):-
     not(one_element_list(Tree)),
