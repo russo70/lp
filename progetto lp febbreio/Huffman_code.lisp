@@ -15,6 +15,9 @@
   (list 'node t1 t2 (+ (tree-weight t1) (tree-weight t2))))
 
 (defun hucodec-generate-huffman-tree (symbols-n-weights)
+  "Genera un albero di Huffman a partire da una lista di coppie (simbolo . peso).
+Se la lista non è ordinata in ordine descrescente in base al peso, la ordina prima.
+Nel caso la lista contenga un solo elemento, restituisce la foglia corrispondente."
   (when (null symbols-n-weights)
     (error "La lista di simboli e pesi è vuota"))
   (unless (sorted-descending-p symbols-n-weights (lambda (pair) (cdr pair)))
