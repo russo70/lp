@@ -94,6 +94,13 @@ get_bit(M, [Tree|_], Bit):-
     Bit = "0",
     !.
 
+get_bit(M, [Tree|_], Bit):-
+  A = [Tree],
+   one_element_list(A),
+    member(M, A),
+    Bit = "0",
+  !.
+
 
 convert_to_list(M, List):-
     atom_chars(M, List),
@@ -147,6 +154,16 @@ get_letter([N|Bits],Tree,Bits,M):-
    findall(List, vector(Tree, List, N1), Ntree),
    one_element_list(Ntree),
    Ntree =[M|_],
+
+  !.
+
+get_letter([N|Bits],Tree,Bits,Tree):-
+  not(is_list(Tree)),
+  atom_number(N,N1),
+  N1 == 0,
+  void_list(Bits),
+  A = [Tree],
+   one_element_list(A),
 
   !.
 
@@ -286,6 +303,12 @@ create_node([[S1,N1],[S2, N2]|List], Node):-
     Node =[S, N3],
     !.
 
+create_node([[S1,N1]|List], Node):-
+    void_list(List),
+     assert(node(S1,N1)),
+    Node =[S1, N1],
+    !.
+
 create_vector([[L, _], [L1, _]]):-
     not( is_list(L)),
    not( is_list(L1)),
@@ -327,7 +350,6 @@ hucodec_generate_symbol_bits_table([Tree|_], SymbolBitsTable) :-
     !.
 
 
-% Se il simbolo è nel ramo sinistro, aggiunge '0' e continua
 get_code(Tree, Symbol, Bits, Code) :-
     vector(Tree, Left, 0),
     string_concat(Bits, "0", NewBits),
@@ -338,8 +360,10 @@ get_code(Tree, Symbol, Bits, Code) :-
     string_concat(Bits, "1", NewBits),
     get_code(Right, Symbol, NewBits, Code).
 
-get_code(Tree, Tree, Bits, Bits) :-
-    not(is_list(Tree)).
+get_code(Tree, Symbol, Bits, Code) :-
+    not( is_list(Tree)),
+    ( Bits == "" -> Code = "0" ; Code = Bits ),
+    Symbol = Tree.
 
 
 
@@ -348,8 +372,8 @@ get_code(Tree, Tree, Bits, Bits) :-
 %hucodec_print_huffman_tree
 
 hucodec_print_huffman_tree([Tree|_]):-
+    is_list(Tree),
     not(one_element_list(Tree)),
-    % writeln(Tree),
     findall(N, vector(Tree, N, 0), [List|_]),
     writeln( vector(Tree, List, 0)),
     hucodec_print_huffman_tree([List]),
@@ -364,3 +388,8 @@ hucodec_print_huffman_tree(Tree):-
          findall(N, node(Node, N), [List|_]),
           writeln( node(Node, List)),
     !.
+
+hucodec_print_huffman_tree([Tree|_]):-
+  not(is_list(Tree)),
+   writeln( node(Tree, 0)),
+  !.
