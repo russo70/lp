@@ -1,0 +1,41 @@
+(defun sorted-descending-p (lst key)
+  "Verifica se LST è ordinata in ordine descrescente secondo la funzione KEY."
+  (cond ((or (null lst) (null (cdr lst))) t)
+        (t (loop for (a b) on lst while b
+                 always (>= (funcall key a) (funcall key b))))))
+
+(defun tree-weight (tree)
+  "Restituisce il peso dell'albero, che si tratti di una foglia o di un nodo interno."
+  (if (eq (first tree) 'leaf)
+      (third tree)  
+      (fourth tree)))  
+
+(defun combine-trees (t1 t2)
+  "Combina due alberi in un nuovo nodo, il cui peso è la somma dei pesi dei due alberi."
+  (list 'node t1 t2 (+ (tree-weight t1) (tree-weight t2))))
+
+(defun hucodec-generate-huffman-tree (symbols-n-weights)
+  "Genera un albero di Huffman a partire da una lista di coppie (simbolo . peso).
+Se la lista non è ordinata in ordine descrescente in base al peso, la ordina prima.
+Nel caso la lista contenga un solo elemento, restituisce la foglia corrispondente."
+  (when (null symbols-n-weights)
+    (error "La lista di simboli e pesi è vuota"))
+  (unless (sorted-descending-p symbols-n-weights (lambda (pair) (cdr pair)))
+    (setf symbols-n-weights (sort symbols-n-weights #'> :key #'cdr)))
+  (let ((forest (mapcar (lambda (pair)
+                          (list 'leaf (car pair) (cdr pair)))
+                        symbols-n-weights)))
+    (if (= (length forest) 1)
+        (car forest)
+        (progn
+          (loop while (> (length forest) 1)
+                do (progn
+                     (unless (sorted-descending-p forest #'tree-weight)
+                       (setf forest (sort forest #'> :key #'tree-weight)))
+                     (let* ((t1 (car (last forest)))
+                            (forest (butlast forest))
+                            (t2 (car (last forest)))
+                            (forest (butlast forest))
+                            (new-tree (combine-trees t1 t2)))
+                       (setf forest (cons new-tree forest)))))
+          (car forest)))))
