@@ -1,0 +1,107 @@
+(defun sorted-descending-p (list key-fn)
+  "Verifica se la LIST è ordinata in ordine decrescente secondo la funzione KEY-FN."
+  (every (lambda (a b) (>= (funcall key-fn a) (funcall key-fn b)))
+         list
+         (rest list)))
+
+(defun tree-weight (tree)
+  "Restituisce il peso dell'albero, che sia una foglia o un nodo interno."
+  (if (eq (first tree) 'leaf)
+      (third tree)
+      (fourth tree)))
+
+(defun combine-trees (t1 t2)
+  "Combina due alberi in un nuovo nodo, il cui peso è la somma dei pesi dei due alberi."
+  (list 'node t1 t2 (+ (tree-weight t1) (tree-weight t2))))
+
+
+(defun original-huffman-tree (symbols-n-weights)
+  "Costruisce l'albero di Huffman da una lista di simboli e pesi."
+  (let ((queue (sort (copy-list (mapcar (lambda (pair) 
+                                          (list 'leaf (car pair) (cdr pair))) 
+                                        symbols-n-weights))
+                     #'> :key #'tree-weight)))
+    (loop while (> (length queue) 1) do
+      (let ((t1 (pop queue))
+            (t2 (pop queue)))
+        (push (combine-trees t1 t2) queue)
+        (setf queue (sort queue #'> :key #'tree-weight))))
+    (first queue)))
+
+
+
+
+(defun hucodec-generate-huffman-tree (symbols-n-weights)
+  "Genera un albero di Huffman dato un elenco di simboli e pesi."
+  (if (= (length symbols-n-weights) 1)
+      (caar symbols-n-weights)  ;; Se c'è un solo simbolo, restituiamo direttamente il carattere
+      ;; Altrimenti costruiamo normalmente l'albero (chiamata alla funzione originale)
+      (original-huffman-tree symbols-n-weights)))  ;; Sostituire con la tua funzione originale
+
+
+
+
+(defun hucodec-generate-symbol-bits-table (huffman-tree &optional (prefix "") (table '()))
+  "Genera una tabella di codifica dei simboli a partire dall'albero di Huffman."
+  (cond
+    ;; Se è una foglia (simbolo singolo), assegniamo direttamente il codice
+    ((eq (first huffman-tree) 'leaf)
+     (cons (cons (second huffman-tree) prefix) table))
+    ;; Se è un nodo interno, assegniamo 0 e 1 ai rami sinistro e destro
+    ((eq (first huffman-tree) 'node)
+     (append (hucodec-generate-symbol-bits-table (second huffman-tree) (concatenate 'string prefix "0") table)
+             (hucodec-generate-symbol-bits-table (third huffman-tree) (concatenate 'string prefix "1") table)))
+    (t (error "Struttura dell'albero non valida: ~A" huffman-tree))))
+
+
+
+
+(defun hucodec-print-huffman-tree (huffman-tree)
+  "Stampa l'albero di Huffman."
+  (if (atom huffman-tree)
+      (format t "[~A]~%" huffman-tree)  ;; Caso di un solo simbolo
+      (progn
+        (format t "Nodo (Peso: ~A)~%" (car huffman-tree))
+        (hucodec-print-huffman-tree (cadr huffman-tree))
+        (hucodec-print-huffman-tree (caddr huffman-tree)))))
+
+
+(defun hucodec-encode (message huffman-tree)
+  "Codifica MESSAGE in una lista di bit (0 e 1) usando l'albero di Huffman."
+  (let* ((symbol-bits-table (hucodec-generate-symbol-bits-table huffman-tree))
+         (ht (make-hash-table :test #'eql)))
+    
+    ;; Crea la tabella dei bit (associamo i simboli ai codici binari)
+    (dolist (pair symbol-bits-table)
+      (setf (gethash (car pair) ht) (cdr pair)))
+    
+    ;; Converti il messaggio in una lista di caratteri, se è una stringa
+    (let ((message-list (if (stringp message)
+                            (coerce message 'list)  ;; Converti la stringa in una lista di caratteri
+                            message)))  ;; Se già è una lista, la usa direttamente
+      
+      ;; Codifica il messaggio: per ogni simbolo trova il suo codice e lo converte in lista di bit
+      (apply #'append
+             (mapcar (lambda (char)
+                       (let ((bits (gethash char ht)))
+                         (if bits
+                             (mapcar (lambda (bit) (if (char= bit #\1) 1 0)) (coerce bits 'list))  ;; CONVERSIONE CORRETTA
+                             (error "Carattere non presente nella tabella: ~A" char))))
+                     message-list)))))
+
+(defun hucodec-decode (encoded huffman-tree)
+  "Decodifica un messaggio codificato con l'albero di Huffman.
+Se ENCODED è una stringa, la converte in una lista di caratteri."
+  (let* ((encoded-list (if (stringp encoded)
+                           (map 'list (lambda (ch) (- (char-code ch) (char-code #\0))) encoded)  ;; Converte in lista di numeri
+                           encoded))  ;; Se già è una lista, la usa direttamente
+         (current-tree huffman-tree)
+         (decoded-message '()))
+    (dolist (bit encoded-list decoded-message)
+      (setq current-tree (if (= bit 0)
+                             (second current-tree)  ;; Nodo sinistro per bit 0
+                             (third current-tree))) ;; Nodo destro per bit 1
+      (when (eq (first current-tree) 'leaf)  ;; Quando raggiungi una foglia
+        (push (second current-tree) decoded-message)
+        (setq current-tree huffman-tree)))  ;; Torna alla radice
+    (coerce (reverse decoded-message) 'string)))  ;; Converti la lista finale in stringa
